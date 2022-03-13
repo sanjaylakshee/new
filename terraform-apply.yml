@@ -1,0 +1,43 @@
+terraform-apply
+
+name: "terrform-plan-infra-release"
+
+on: 
+  push:
+    branches: 
+     - main
+
+jobs:
+  terrform:
+    name: "terraform"
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secretes.AWS_KEY_ID}}
+      AWS_SECERET_ACCESS_KEY: ${{ secretes.AWS_SECRETE_ID}}
+      AWS_REGION: "ap-south-1"
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: setup terraform
+        uses: hashicorp/setup-terraform@v1
+
+       - name: Terraform init
+        id: init
+        run: terraform init
+
+      - name: Terraform plan
+        id: plan
+        if: github.event_name == push
+        run: terraform plan -no-color
+        continue-on-error: true
+
+      - name:
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+        
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve
+
